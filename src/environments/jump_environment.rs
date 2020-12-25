@@ -1,3 +1,5 @@
+use std::cmp::{max, min};
+
 #[derive(Debug)]
 enum JumpEnvironmentTile {
     Empty,
@@ -7,18 +9,22 @@ enum JumpEnvironmentTile {
 
 struct JumpEnvironment {
     state: Vec<Vec<JumpEnvironmentTile>>,
+    size: usize,
+    ground_height: usize,
+    player_col: usize,
+    player_vel: i8,
 }
 
 impl JumpEnvironment {
     fn new(size: usize) -> Self {
         let ground_height = size / 3;
-        let player_x = size / 3;
+        let player_col = size / 3;
         let player_y = ground_height + 1;
         let state = (0..size)
             .map(|x| {
                 (0..size)
                     .map(|y| {
-                        if y == player_y && x == player_x {
+                        if y == player_y && x == player_col {
                             JumpEnvironmentTile::Player
                         } else if y == ground_height {
                             JumpEnvironmentTile::Ground
@@ -29,7 +35,46 @@ impl JumpEnvironment {
                     .collect()
             })
             .collect();
-        Self { state }
+        Self {
+            state,
+            size,
+            ground_height,
+            player_col,
+            player_vel: 0,
+        }
+    }
+
+    fn get_player_height(&self) -> usize {
+        self.state[self.player_col]
+            .iter()
+            .position(|t| matches!(t, JumpEnvironmentTile::Player))
+            .expect("no player exists")
+    }
+
+    fn jump(&mut self) {
+        if self.get_player_height() == self.ground_height + 1 {
+            self.player_vel = 2;
+        }
+    }
+
+    fn update(&mut self) {
+        let player_height = self.get_player_height();
+        let new_player_height = max(
+            self.ground_height + 1,
+            min(
+                self.size - 1,
+                (player_height as i8 + self.player_vel).abs() as usize,
+            ),
+        );
+
+        self.state[self.player_col].swap(player_height, new_player_height);
+        eprintln!("h={} v={}", new_player_height, self.player_vel);
+
+        if new_player_height > self.ground_height + 1 {
+            self.player_vel -= 1;
+        } else {
+            self.player_vel = 0;
+        }
     }
 }
 
@@ -99,5 +144,25 @@ mod tests {
             player_tile_count < 2,
             "more than one player tiles were found"
         );
+    }
+
+    #[test]
+    fn test_player_can_jump() {
+        let mut env = JumpEnvironment::new(5);
+        let initial_player_height = env.get_player_height();
+        env.jump();
+        env.update();
+        assert!(env.get_player_height() > initial_player_height);
+    }
+
+    #[test]
+    fn test_player_lands_after_jump() {
+        let mut env = JumpEnvironment::new(5);
+        let initial_player_height = env.get_player_height();
+        env.jump();
+        for _ in 0..10 {
+            env.update();
+        }
+        assert_eq!(env.get_player_height(), initial_player_height);
     }
 }
