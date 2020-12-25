@@ -61,9 +61,14 @@ impl JumpEnvironment {
     }
 
     fn update(&mut self) {
+        self.shift_walls();
+        self.update_player_height();
+        self.update_player_vel();
+    }
+
+    fn shift_walls(&mut self) {
         let mut new_walls = vec![];
-        for i in 0..self.walls.len() {
-            let wall = self.walls[i];
+        for &wall in &self.walls {
             if wall != self.player_col {
                 self.state.swap(wall, wall - 1);
                 new_walls.push(wall - 1);
@@ -71,9 +76,6 @@ impl JumpEnvironment {
         }
 
         self.walls = new_walls;
-
-        self.update_player_height();
-        self.update_player_vel();
     }
 
     fn update_player_height(&mut self) {
