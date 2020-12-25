@@ -15,6 +15,7 @@ struct JumpEnvironment {
     player_col: usize,
     player_vel: i8,
     player_height: usize,
+    walls: Vec<usize>,
 }
 
 impl JumpEnvironment {
@@ -23,6 +24,7 @@ impl JumpEnvironment {
         let player_col = size / 3;
         let player_height = ground_height + 1;
         let walls: Vec<usize> = vec![size - 1];
+        let wall_height = 2;
         let state = (0..size)
             .map(|x| {
                 (0..size)
@@ -31,7 +33,7 @@ impl JumpEnvironment {
                             JumpEnvironmentTile::Player
                         } else if y == ground_height {
                             JumpEnvironmentTile::Ground
-                        } else if walls.contains(&x) {
+                        } else if walls.contains(&x) && y <= wall_height {
                             JumpEnvironmentTile::Wall
                         } else {
                             JumpEnvironmentTile::Empty
@@ -48,6 +50,7 @@ impl JumpEnvironment {
             player_col,
             player_vel: 0,
             player_height,
+            walls,
         }
     }
 
@@ -187,5 +190,55 @@ mod tests {
             .sum();
 
         assert_ne!(wall_tile_count, 0, "no walls were found");
+    }
+
+    #[test]
+    fn test_wall_height_can_be_jumped() {
+        let mut env = JumpEnvironment::new(5);
+        let max_jump_height = get_max_jump_height(&mut env);
+        let max_wall_height = get_max_wall_height(&env);
+
+        assert!(
+            max_jump_height > max_wall_height,
+            "wall taller than player can jump exists"
+        );
+    }
+
+    fn get_max_wall_height(env: &JumpEnvironment) -> usize {
+        env.state
+            .iter()
+            .enumerate()
+            .filter_map(|(x, t_col)| {
+                if env.walls.contains(&x) {
+                    Some(t_col)
+                } else {
+                    None
+                }
+            })
+            .map(|t_col| {
+                t_col
+                    .iter()
+                    .enumerate()
+                    .filter_map(|(y, t)| match t {
+                        JumpEnvironmentTile::Wall => Some(y),
+                        _ => None,
+                    })
+                    .max()
+                    .unwrap()
+            })
+            .max()
+            .unwrap()
+    }
+
+    fn get_max_jump_height(env: &mut JumpEnvironment) -> usize {
+        let mut max_player_height = env.player_height;
+        env.jump();
+        env.update();
+        while env.player_height > max_player_height {
+            max_player_height = env.player_height;
+            env.update();
+        }
+
+        max_player_height
     }
 }
