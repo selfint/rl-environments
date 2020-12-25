@@ -2,6 +2,7 @@
 enum JumpEnvironmentTile {
     Empty,
     Ground,
+    Player,
 }
 
 struct JumpEnvironment {
@@ -11,18 +12,23 @@ struct JumpEnvironment {
 impl JumpEnvironment {
     fn new(size: usize) -> Self {
         let ground_height = size / 3;
-        let mut state = vec![];
-        for _ in 0..size {
-            let mut col = vec![];
-            for y in 0..size {
-                if y == ground_height {
-                    col.push(JumpEnvironmentTile::Ground);
-                } else {
-                    col.push(JumpEnvironmentTile::Empty);
-                }
-            }
-            state.push(col);
-        }
+        let player_x = size / 3;
+        let player_y = ground_height + 1;
+        let state = (0..size)
+            .map(|x| {
+                (0..size)
+                    .map(|y| {
+                        if y == player_y && x == player_x {
+                            JumpEnvironmentTile::Player
+                        } else if y == ground_height {
+                            JumpEnvironmentTile::Ground
+                        } else {
+                            JumpEnvironmentTile::Empty
+                        }
+                    })
+                    .collect()
+            })
+            .collect();
         Self { state }
     }
 }
@@ -73,5 +79,25 @@ mod tests {
                 }
             }
         }
+    }
+
+    #[test]
+    fn test_only_one_player_exists() {
+        let env = JumpEnvironment::new(5);
+        let player_tile_count: usize = env
+            .state
+            .iter()
+            .flatten()
+            .map(|t| match t {
+                JumpEnvironmentTile::Player => 1,
+                _ => 0,
+            })
+            .sum();
+
+        assert_ne!(player_tile_count, 0, "no player was found");
+        assert!(
+            player_tile_count < 2,
+            "more than one player tiles were found"
+        );
     }
 }
