@@ -5,6 +5,7 @@ enum JumpEnvironmentTile {
     Empty,
     Ground,
     Player,
+    Wall,
 }
 
 struct JumpEnvironment {
@@ -21,6 +22,7 @@ impl JumpEnvironment {
         let ground_height = size / 3;
         let player_col = size / 3;
         let player_height = ground_height + 1;
+        let walls: Vec<usize> = vec![size - 1];
         let state = (0..size)
             .map(|x| {
                 (0..size)
@@ -29,6 +31,8 @@ impl JumpEnvironment {
                             JumpEnvironmentTile::Player
                         } else if y == ground_height {
                             JumpEnvironmentTile::Ground
+                        } else if walls.contains(&x) {
+                            JumpEnvironmentTile::Wall
                         } else {
                             JumpEnvironmentTile::Empty
                         }
@@ -36,6 +40,7 @@ impl JumpEnvironment {
                     .collect()
             })
             .collect();
+
         Self {
             state,
             size,
@@ -165,5 +170,22 @@ mod tests {
             env.update();
         }
         assert_eq!(env.player_height, initial_player_height);
+    }
+
+    #[test]
+    fn test_walls_exist() {
+        let env = JumpEnvironment::new(5);
+
+        let wall_tile_count: usize = env
+            .state
+            .iter()
+            .flatten()
+            .map(|t| match t {
+                JumpEnvironmentTile::Wall => 1,
+                _ => 0,
+            })
+            .sum();
+
+        assert_ne!(wall_tile_count, 0, "no walls were found");
     }
 }
