@@ -16,6 +16,8 @@ struct JumpEnvironment {
     player_vel: i8,
     player_height: usize,
     walls: Vec<usize>,
+    done: bool,
+    wall_height: usize,
 }
 
 impl JumpEnvironment {
@@ -51,6 +53,8 @@ impl JumpEnvironment {
             player_vel: 0,
             player_height,
             walls,
+            done: false,
+            wall_height,
         }
     }
 
@@ -64,6 +68,17 @@ impl JumpEnvironment {
         self.shift_walls();
         self.update_player_height();
         self.update_player_vel();
+
+        if self
+            .walls
+            .iter()
+            .filter(|&&w| w == self.player_col)
+            .last()
+            .is_some()
+            && self.player_height <= self.wall_height
+        {
+            self.done = true;
+        }
     }
 
     fn shift_walls(&mut self) {
@@ -280,5 +295,18 @@ mod tests {
         if let Some(&x) = min_wall {
             assert!(x >= env.player_col);
         }
+    }
+
+    #[test]
+    fn test_player_dies_on_wall_collide() {
+        let mut env = JumpEnvironment::new(5);
+        let steps_to_collision = env.walls.iter().min().unwrap() - env.player_col;
+        for _ in 0..steps_to_collision - 1 {
+            env.update();
+        }
+
+        assert!(!env.done);
+        env.update();
+        assert!(env.done);
     }
 }
