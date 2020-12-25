@@ -13,18 +13,19 @@ struct JumpEnvironment {
     ground_height: usize,
     player_col: usize,
     player_vel: i8,
+    player_height: usize,
 }
 
 impl JumpEnvironment {
     fn new(size: usize) -> Self {
         let ground_height = size / 3;
         let player_col = size / 3;
-        let player_y = ground_height + 1;
+        let player_height = ground_height + 1;
         let state = (0..size)
             .map(|x| {
                 (0..size)
                     .map(|y| {
-                        if y == player_y && x == player_col {
+                        if y == player_height && x == player_col {
                             JumpEnvironmentTile::Player
                         } else if y == ground_height {
                             JumpEnvironmentTile::Ground
@@ -41,36 +42,36 @@ impl JumpEnvironment {
             ground_height,
             player_col,
             player_vel: 0,
+            player_height,
         }
     }
 
-    fn get_player_height(&self) -> usize {
-        self.state[self.player_col]
-            .iter()
-            .position(|t| matches!(t, JumpEnvironmentTile::Player))
-            .expect("no player exists")
-    }
-
     fn jump(&mut self) {
-        if self.get_player_height() == self.ground_height + 1 {
+        if self.player_height == self.ground_height + 1 {
             self.player_vel = 2;
         }
     }
 
     fn update(&mut self) {
-        let player_height = self.get_player_height();
+        self.update_player_height();
+        self.update_player_vel();
+    }
+
+    fn update_player_height(&mut self) {
         let new_player_height = max(
             self.ground_height + 1,
             min(
                 self.size - 1,
-                (player_height as i8 + self.player_vel).abs() as usize,
+                (self.player_height as i8 + self.player_vel).abs() as usize,
             ),
         );
 
-        self.state[self.player_col].swap(player_height, new_player_height);
-        eprintln!("h={} v={}", new_player_height, self.player_vel);
+        self.state[self.player_col].swap(self.player_height, new_player_height);
+        self.player_height = new_player_height;
+    }
 
-        if new_player_height > self.ground_height + 1 {
+    fn update_player_vel(&mut self) {
+        if self.player_height > self.ground_height + 1 {
             self.player_vel -= 1;
         } else {
             self.player_vel = 0;
@@ -149,20 +150,20 @@ mod tests {
     #[test]
     fn test_player_can_jump() {
         let mut env = JumpEnvironment::new(5);
-        let initial_player_height = env.get_player_height();
+        let initial_player_height = env.player_height;
         env.jump();
         env.update();
-        assert!(env.get_player_height() > initial_player_height);
+        assert!(env.player_height > initial_player_height);
     }
 
     #[test]
     fn test_player_lands_after_jump() {
         let mut env = JumpEnvironment::new(5);
-        let initial_player_height = env.get_player_height();
+        let initial_player_height = env.player_height;
         env.jump();
         for _ in 0..10 {
             env.update();
         }
-        assert_eq!(env.get_player_height(), initial_player_height);
+        assert_eq!(env.player_height, initial_player_height);
     }
 }
