@@ -268,4 +268,17 @@ mod tests {
             }
         }
     }
+
+    #[test]
+    fn test_walls_despawn() {
+        let mut env = JumpEnvironment::new(5);
+        for _ in 0..5 {
+            env.update();
+        }
+
+        let min_wall = env.walls.iter().min();
+        if let Some(&x) = min_wall {
+            assert!(x >= env.player_col);
+        }
+    }
 }
