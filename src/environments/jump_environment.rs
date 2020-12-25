@@ -61,6 +61,17 @@ impl JumpEnvironment {
     }
 
     fn update(&mut self) {
+        let mut new_walls = vec![];
+        for i in 0..self.walls.len() {
+            let wall = self.walls[i];
+            if wall != self.player_col {
+                self.state.swap(wall, wall - 1);
+                new_walls.push(wall - 1);
+            }
+        }
+
+        self.walls = new_walls;
+
         self.update_player_height();
         self.update_player_vel();
     }
@@ -240,5 +251,19 @@ mod tests {
         }
 
         max_player_height
+    }
+
+    #[test]
+    fn test_walls_shift_left() {
+        let mut env = JumpEnvironment::new(200);
+        for _ in 0..100 {
+            let initial_walls = env.walls.clone();
+            env.update();
+            let new_walls: Vec<&usize> = env.walls.iter().take(initial_walls.len()).collect();
+
+            for (&initial_wall, &&new_wall) in initial_walls.iter().zip(new_walls.iter()) {
+                assert_eq!(initial_wall, new_wall + 1);
+            }
+        }
     }
 }
