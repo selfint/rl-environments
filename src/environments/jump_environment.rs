@@ -53,7 +53,7 @@ mod tests {
     }
 
     #[test]
-    fn test_jump_environment_ground_is_level() {
+    fn test_jump_environment_has_one_ground_height() {
         let env = JumpEnvironment::new(5);
         let mut ground_height: Option<usize> = None;
         for (x, tile_col) in env.state.iter().enumerate() {
