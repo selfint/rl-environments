@@ -9,7 +9,6 @@ pub enum JumpEnvironmentTile {
 }
 
 pub struct JumpEnvironment {
-    pub state: Vec<Vec<JumpEnvironmentTile>>,
     pub size: usize,
     ground_height: usize,
     player_col: usize,
@@ -27,29 +26,8 @@ impl JumpEnvironment {
         let player_height = ground_height + 1;
         let walls: Vec<usize> = vec![size - 1];
         let wall_height = 2;
-        let state = (0..size)
-            .map(|x| {
-                (0..size)
-                    .map(|y| {
-                        if y == player_height && x == player_col {
-                            JumpEnvironmentTile::Player
-                        } else if y == ground_height {
-                            JumpEnvironmentTile::Ground
-                        } else if walls.contains(&x)
-                            && ground_height < y
-                            && y <= ground_height + wall_height
-                        {
-                            JumpEnvironmentTile::Wall
-                        } else {
-                            JumpEnvironmentTile::Empty
-                        }
-                    })
-                    .collect()
-            })
-            .collect();
 
         Self {
-            state,
             size,
             ground_height,
             player_col,
@@ -59,6 +37,29 @@ impl JumpEnvironment {
             done: false,
             wall_height,
         }
+    }
+
+    pub fn state(&self) -> Vec<Vec<JumpEnvironmentTile>> {
+        (0..self.size)
+            .map(|x| {
+                (0..self.size)
+                    .map(|y| {
+                        if y == self.player_height && x == self.player_col {
+                            JumpEnvironmentTile::Player
+                        } else if y == self.ground_height {
+                            JumpEnvironmentTile::Ground
+                        } else if self.walls.contains(&x)
+                            && self.ground_height < y
+                            && y <= self.ground_height + self.wall_height
+                        {
+                            JumpEnvironmentTile::Wall
+                        } else {
+                            JumpEnvironmentTile::Empty
+                        }
+                    })
+                    .collect()
+            })
+            .collect()
     }
 
     pub fn jump(&mut self) {
@@ -95,17 +96,13 @@ impl JumpEnvironment {
     }
 
     fn shift_walls(&mut self) {
-        let mut new_walls = vec![];
-        for &wall in &self.walls {
-            if wall != self.player_col {
-                self.state.swap(wall, wall - 1);
-                new_walls.push(wall - 1);
+        for i in 0..self.walls.len() {
+            if self.walls[i] != self.player_col {
+                self.walls[i] -= 1;
             } else {
-                new_walls.push(self.size - 1);
+                self.walls[i] = self.size - 1;
             }
         }
-
-        self.walls = new_walls;
     }
 
     fn update_player_height(&mut self) {
@@ -117,7 +114,6 @@ impl JumpEnvironment {
             ),
         );
 
-        self.state[self.player_col].swap(self.player_height, new_player_height);
         self.player_height = new_player_height;
     }
 
@@ -137,15 +133,15 @@ mod tests {
     #[test]
     fn test_state_is_not_empty() {
         let env = JumpEnvironment::new(5);
-        assert!(!env.state.is_empty(), "state is empty");
+        assert!(!env.state().is_empty(), "state is empty");
     }
 
     #[test]
     fn test_first_col_has_ground_tile() {
         let env = JumpEnvironment::new(5);
-        assert!(!env.state.is_empty(), "state is empty");
+        assert!(!env.state().is_empty(), "state is empty");
 
-        let first_col_has_ground_tile = env.state[0]
+        let first_col_has_ground_tile = env.state()[0]
             .iter()
             .any(|t| matches!(t, JumpEnvironmentTile::Ground));
 
@@ -159,7 +155,7 @@ mod tests {
     fn test_ground_height() {
         let env = JumpEnvironment::new(5);
         let mut ground_height: Option<usize> = None;
-        for (x, tile_col) in env.state.iter().enumerate() {
+        for (x, tile_col) in env.state().iter().enumerate() {
             for (y, tile) in tile_col.iter().enumerate() {
                 if let JumpEnvironmentTile::Ground = tile {
                     if x == 0 {
@@ -182,7 +178,7 @@ mod tests {
     fn test_only_one_player_exists() {
         let env = JumpEnvironment::new(5);
         let player_tile_count: usize = env
-            .state
+            .state()
             .iter()
             .flatten()
             .map(|t| match t {
@@ -223,7 +219,7 @@ mod tests {
         let env = JumpEnvironment::new(5);
 
         let wall_tile_count: usize = env
-            .state
+            .state()
             .iter()
             .flatten()
             .map(|t| match t {
@@ -248,7 +244,7 @@ mod tests {
     }
 
     fn get_max_wall_height(env: &JumpEnvironment) -> usize {
-        env.state
+        env.state()
             .iter()
             .enumerate()
             .filter_map(|(x, t_col)| {
@@ -348,7 +344,6 @@ mod tests {
     #[test]
     fn test_jumping_over_wall_yields_positive_reward() {
         let mut env = JumpEnvironment::new(5);
-        env.state.swap(env.walls[0], env.player_col + 1);
         env.walls[0] = env.player_col + 1;
         env.player_height = env.wall_height + 2;
         let reward = env.update();
@@ -359,7 +354,6 @@ mod tests {
     #[test]
     fn test_colliding_with_wall_yield_negative_reward() {
         let mut env = JumpEnvironment::new(5);
-        env.state.swap(env.walls[0], env.player_col + 1);
         env.walls[0] = env.player_col + 1;
         let reward = env.update();
 

@@ -20,7 +20,8 @@ fn display_tile(tile: &JumpEnvironmentTile) -> &str {
 /// displays jump environment state
 fn display_state(env: &JumpEnvironment) {
     let mut rows = vec![];
-    for col in &env.state {
+    let state = env.state();
+    for col in state.iter() {
         for (i, tile) in col.iter().enumerate() {
             if rows.len() < i + 1 {
                 let row = vec![tile];
