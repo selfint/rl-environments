@@ -24,21 +24,15 @@ pub struct JumpEnvironment {
 
 impl JumpEnvironment {
     pub fn new(size: usize) -> Self {
-        let ground_height = size / 3;
-        let player_col = size / 3;
-        let player_height = ground_height + 1;
-        let walls = vec![size - 1];
-        let wall_height = 2;
-
         Self {
             size,
-            ground_height,
-            player_col,
+            ground_height: size / 3,
+            player_col: size / 3,
             player_vel: 0,
-            player_height,
-            walls,
+            player_height: (size / 3) + 1,
+            walls: vec![size - 1],
             done: false,
-            wall_height,
+            wall_height: 2,
         }
     }
 
