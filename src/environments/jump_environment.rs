@@ -67,23 +67,30 @@ impl JumpEnvironment {
         }
     }
 
-    fn update(&mut self) {
+    fn update(&mut self) -> i8 {
         self.shift_walls();
         self.update_player_height();
         self.update_player_vel();
-        self.check_player_collision();
+
+        self.calculate_reward()
     }
 
-    fn check_player_collision(&mut self) {
+    fn calculate_reward(&mut self) -> i8 {
         if self
             .walls
             .iter()
             .filter(|&&w| w == self.player_col)
             .last()
             .is_some()
-            && self.player_height <= self.wall_height
         {
-            self.done = true;
+            if self.player_height <= self.wall_height {
+                self.done = true;
+                -1
+            } else {
+                1
+            }
+        } else {
+            0
         }
     }
 
@@ -336,5 +343,26 @@ mod tests {
                 assert!(!env.walls.is_empty());
             }
         }
+    }
+
+    #[test]
+    fn test_jumping_over_wall_yields_positive_reward() {
+        let mut env = JumpEnvironment::new(5);
+        env.state.swap(env.walls[0], env.player_col + 1);
+        env.walls[0] = env.player_col + 1;
+        env.player_height = env.wall_height + 2;
+        let reward = env.update();
+
+        assert!(reward > 0);
+    }
+
+    #[test]
+    fn test_colliding_with_wall_yield_negative_reward() {
+        let mut env = JumpEnvironment::new(5);
+        env.state.swap(env.walls[0], env.player_col + 1);
+        env.walls[0] = env.player_col + 1;
+        let reward = env.update();
+
+        assert!(reward < 0);
     }
 }
