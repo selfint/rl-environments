@@ -8,7 +8,7 @@ fn simple_jumper(_env: &JumpEnvironment) -> bool {
 }
 
 fn main() {
-    let mut env = JumpEnvironment::new(7);
+    let mut env = JumpEnvironment::new(12);
     let mut score = 0;
     while !env.done {
         let jump = simple_jumper(&env);
