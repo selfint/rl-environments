@@ -4,7 +4,7 @@ use std::{
     fmt::Display,
 };
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum JumpEnvironmentTile {
     Empty,
     Ground,
@@ -18,7 +18,7 @@ pub struct JumpEnvironment {
     player_col: usize,
     player_vel: i8,
     player_height: usize,
-    walls: Vec<usize>,
+    walls: Vec<(usize, bool)>,
     pub done: bool,
     wall_height: usize,
 }
@@ -31,33 +31,39 @@ impl JumpEnvironment {
             player_col: size / 6,
             player_vel: 0,
             player_height: (size / 3) + 1,
-            walls: vec![size - 1],
+            walls: vec![(size - 1, false)],
             done: false,
             wall_height: 2,
         }
     }
 
     pub fn state(&self) -> Vec<Vec<JumpEnvironmentTile>> {
-        (0..self.size)
-            .map(|x| {
-                (0..self.size)
-                    .map(|y| {
-                        if y == self.player_height && x == self.player_col {
-                            JumpEnvironmentTile::Player
-                        } else if y == self.ground_height {
-                            JumpEnvironmentTile::Ground
-                        } else if self.walls.contains(&x)
-                            && self.ground_height < y
-                            && y <= self.ground_height + self.wall_height
-                        {
-                            JumpEnvironmentTile::Wall
-                        } else {
-                            JumpEnvironmentTile::Empty
-                        }
-                    })
-                    .collect()
-            })
-            .collect()
+        let mut state = Vec::with_capacity(self.size);
+        for _ in 0..self.size {
+            state.push(vec![JumpEnvironmentTile::Empty; self.size]);
+        }
+
+        // add player
+        state[self.player_col][self.player_height] = JumpEnvironmentTile::Player;
+
+        // add ground
+        for col in &mut state {
+            col[self.ground_height] = JumpEnvironmentTile::Ground;
+        }
+
+        // add walls
+        for &(wall, is_high) in &self.walls {
+            let mut range_start = self.ground_height + 1;
+            let mut range_stop = self.ground_height + self.wall_height;
+            if is_high {
+                range_start += self.wall_height;
+                range_stop += self.wall_height;
+            }
+            for i in range_start..range_stop {
+                state[wall][i] = JumpEnvironmentTile::Wall;
+            }
+        }
+        state
     }
 
     pub fn jump(&mut self) {
@@ -83,15 +89,16 @@ impl JumpEnvironment {
         if min_offset < max_offset {
             random_offset = rng.gen_range(min_offset..max_offset);
         }
-        if let Some(&wall) = self.walls.iter().max() {
+        if let Some(&(wall, _)) = self.walls.iter().max() {
             if wall < self.size - random_offset {
-                self.walls.push(self.size - 1);
+                let high_wall = rng.gen_bool(0.5);
+                self.walls.push((self.size - 1, high_wall));
             }
         }
     }
 
     fn calculate_reward(&mut self) -> i8 {
-        if self.walls.contains(&self.player_col) {
+        if self.walls.iter().any(|&(w, _)| w == self.player_col) {
             if self.player_height <= self.wall_height + self.ground_height {
                 self.done = true;
                 -1
@@ -107,8 +114,8 @@ impl JumpEnvironment {
         self.walls = self
             .walls
             .iter()
-            .filter(|&&w| w > 0)
-            .map(|w| w - 1)
+            .filter(|&(w, _)| *w > 0)
+            .map(|&(w, t)| (w - 1, t))
             .collect();
     }
 
@@ -293,7 +300,7 @@ mod tests {
             .iter()
             .enumerate()
             .filter_map(|(x, t_col)| {
-                if env.walls.contains(&x) {
+                if env.walls.iter().any(|&(w, high_wall)| w == x && !high_wall) {
                     Some(t_col)
                 } else {
                     None
@@ -332,10 +339,11 @@ mod tests {
         for _ in 0..100 {
             let initial_walls = env.walls.clone();
             env.update();
-            let new_walls: Vec<&usize> = env.walls.iter().take(initial_walls.len()).collect();
+            let new_walls: Vec<&(usize, bool)> =
+                env.walls.iter().take(initial_walls.len()).collect();
 
             for (&initial_wall, &&new_wall) in initial_walls.iter().zip(new_walls.iter()) {
-                assert_eq!(initial_wall, new_wall + 1);
+                assert_eq!(initial_wall.0, new_wall.0 + 1);
             }
         }
     }
@@ -343,13 +351,10 @@ mod tests {
     #[test]
     fn test_player_dies_on_wall_collide() {
         let mut env = JumpEnvironment::new(8);
-        let steps_to_collision = env.walls.iter().min().unwrap() - env.player_col;
-        for _ in 0..steps_to_collision - 1 {
+        assert!(!env.done);
+        for _ in 0..10 {
             env.update();
         }
-
-        assert!(!env.done);
-        env.update();
         assert!(env.done);
     }
 
@@ -358,7 +363,11 @@ mod tests {
         let mut env = JumpEnvironment::new(8);
 
         for _ in 0..100 {
-            if env.walls.contains(&(env.player_col + 2)) {
+            if env
+                .walls
+                .iter()
+                .any(|&(w, high_wall)| w == env.player_col + 2 && !high_wall)
+            {
                 env.jump();
             }
             env.update();
@@ -369,7 +378,7 @@ mod tests {
     #[test]
     fn test_jumping_over_wall_yields_positive_reward() {
         let mut env = JumpEnvironment::new(5);
-        env.walls[0] = env.player_col + 1;
+        env.walls[0] = (env.player_col + 1, false);
         env.player_height = env.wall_height + 2;
         let reward = env.update();
 
@@ -379,9 +388,23 @@ mod tests {
     #[test]
     fn test_colliding_with_wall_yield_negative_reward() {
         let mut env = JumpEnvironment::new(5);
-        env.walls[0] = env.player_col + 1;
+        env.walls[0] = (env.player_col + 1, false);
         let reward = env.update();
 
         assert!(reward < 0);
+    }
+
+    #[test]
+    fn test_low_high_walls_spawn() {
+        let mut env = JumpEnvironment::new(10);
+        let mut high_wall_found = false;
+        for _ in 0..1000 {
+            if env.walls.iter().any(|&(_, high_wall)| high_wall) {
+                high_wall_found = true;
+            }
+            env.update();
+        }
+
+        assert!(high_wall_found);
     }
 }
