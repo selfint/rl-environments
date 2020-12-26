@@ -126,6 +126,42 @@ impl JumpEnvironment {
     }
 }
 
+impl Display for JumpEnvironment {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut rows = vec![];
+        let state = self.state();
+        for col in state.iter() {
+            for (i, tile) in col.iter().enumerate() {
+                let tile_str = match tile {
+                    JumpEnvironmentTile::Empty => " ",
+                    JumpEnvironmentTile::Ground => "#",
+                    JumpEnvironmentTile::Wall => "|",
+                    JumpEnvironmentTile::Player => {
+                        if self.done {
+                            "x"
+                        } else if self.player_vel == 0 {
+                            "O"
+                        } else {
+                            "o"
+                        }
+                    }
+                };
+                if rows.len() < i + 1 {
+                    let row = tile_str.to_owned();
+                    rows.push(row);
+                } else {
+                    rows[i].push_str(tile_str);
+                }
+            }
+        }
+
+        rows.reverse();
+        let display_str: String = rows.join("\n");
+
+        write!(f, "{}", display_str)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
