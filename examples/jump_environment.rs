@@ -8,19 +8,20 @@ fn simple_jumper(_env: &JumpEnvironment) -> bool {
 }
 
 fn main() {
-    let mut env = JumpEnvironment::new(11);
-    let mut rewards = 0;
+    let mut env = JumpEnvironment::new(7);
+    let mut score = 0;
     while !env.done {
-        // clear console and reset cursor
-        print!("\x1B[2J\x1B[1;1H");
-
-        println!("{}", &env);
         let jump = simple_jumper(&env);
         if jump {
             env.jump();
         }
-        rewards += env.update();
-        println!("Rewards={} dead={}", rewards, env.done);
-        thread::sleep(time::Duration::from_millis(300));
+        score += env.update();
+
+        // clear console and reset cursor
+        print!("\x1B[2J\x1B[1;1H");
+
+        println!("{}", &env);
+        println!("Score={} dead={}", score, env.done);
+        thread::sleep(time::Duration::from_millis(100));
     }
 }
