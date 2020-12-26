@@ -80,14 +80,8 @@ impl JumpEnvironment {
     }
 
     fn calculate_reward(&mut self) -> i8 {
-        if self
-            .walls
-            .iter()
-            .filter(|&&w| w == self.player_col)
-            .last()
-            .is_some()
-        {
-            if self.player_height <= self.wall_height {
+        if self.walls.contains(&self.player_col) {
+            if self.player_height <= self.wall_height + self.ground_height {
                 self.done = true;
                 -1
             } else {
