@@ -97,15 +97,15 @@ impl JumpEnvironment {
     }
 
     fn update_player_height(&mut self) {
-        let new_player_height = max(
-            self.ground_height + 1,
-            min(
-                self.size - 1,
-                (self.player_height as i8 + self.player_vel).abs() as usize,
-            ),
-        );
-
-        self.player_height = new_player_height;
+        if self.player_vel != 0 {
+            self.player_height = max(
+                self.ground_height + 1,
+                min(
+                    self.size - 1,
+                    (self.player_height as i8 + self.player_vel).abs() as usize,
+                ),
+            );
+        }
     }
 
     fn update_player_vel(&mut self) {
