@@ -77,9 +77,9 @@ impl JumpEnvironment {
 
     fn spawn_walls(&mut self) {
         let mut rng = rand::thread_rng();
-        let min_offset = 3;
+        let min_offset = 5;
         let max_offset = self.size / 3;
-        let mut random_offset = 1;
+        let mut random_offset = min_offset;
         if min_offset < max_offset {
             random_offset = rng.gen_range(min_offset..max_offset);
         }
