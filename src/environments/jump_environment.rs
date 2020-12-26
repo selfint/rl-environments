@@ -1,4 +1,7 @@
-use std::cmp::{max, min};
+use std::{
+    cmp::{max, min},
+    fmt::Display,
+};
 
 #[derive(Debug)]
 pub enum JumpEnvironmentTile {
@@ -15,7 +18,7 @@ pub struct JumpEnvironment {
     player_vel: i8,
     player_height: usize,
     walls: Vec<usize>,
-    done: bool,
+    pub done: bool,
     wall_height: usize,
 }
 
