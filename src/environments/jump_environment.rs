@@ -12,7 +12,7 @@ pub enum JumpEnvironmentTile {
 pub struct JumpEnvironment {
     pub size: usize,
     ground_height: usize,
-    player_col: usize,
+    pub player_col: usize,
     player_vel: i8,
     player_height: usize,
     walls: Vec<(usize, bool)>,
