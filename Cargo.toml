@@ -1,5 +1,5 @@
 [package]
-name = "rl-environment"
+name = "rl-environments"
 version = "0.1.0"
 authors = ["Tom Selfin <selfint@gmail.com>"]
 edition = "2018"
