@@ -358,8 +358,8 @@ mod tests {
     fn test_walls_respawn() {
         let mut env = JumpEnvironment::new(8);
 
-        for _ in 0..10 {
-            if env.walls.iter().any(|&w| w == env.player_col + 2) {
+        for _ in 0..100 {
+            if env.walls.contains(&(env.player_col + 2)) {
                 env.jump();
             }
             env.update();
