@@ -235,6 +235,8 @@ mod tests {
         let mut env = JumpEnvironment::new(5);
         let initial_player_height = env.player_height;
         env.jump();
+
+        // ignore player death
         for _ in 0..10 {
             env.update();
         }
