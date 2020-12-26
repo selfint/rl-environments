@@ -61,7 +61,7 @@ impl JumpEnvironment {
         }
     }
 
-    fn jump(&mut self) {
+    pub fn jump(&mut self) {
         if self.player_height == self.ground_height + 1 {
             self.player_vel = 2;
         }
