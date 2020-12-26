@@ -68,7 +68,10 @@ impl JumpEnvironment {
         self.shift_walls();
         self.update_player_height();
         self.update_player_vel();
+        self.check_player_collision();
+    }
 
+    fn check_player_collision(&mut self) {
         if self
             .walls
             .iter()
