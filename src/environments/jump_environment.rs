@@ -356,21 +356,14 @@ mod tests {
 
     #[test]
     fn test_walls_respawn() {
-        let mut env = JumpEnvironment::new(5);
+        let mut env = JumpEnvironment::new(8);
 
         for _ in 0..10 {
-            let steps_to_collision = env.walls.iter().min().unwrap() - env.player_col;
-            if steps_to_collision > 2 {
-                for _ in 0..steps_to_collision - 2 {
-                    env.update();
-                    assert!(!env.walls.is_empty());
-                }
+            if env.walls.iter().any(|&w| w == env.player_col + 2) {
+                env.jump();
             }
-            env.jump();
-            for _ in 0..2 {
-                env.update();
-                assert!(!env.walls.is_empty());
-            }
+            env.update();
+            assert!(!env.walls.is_empty());
         }
     }
 
