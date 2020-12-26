@@ -43,9 +43,6 @@ impl JumpEnvironment {
             state.push(vec![JumpEnvironmentTile::Empty; self.size]);
         }
 
-        // add player
-        state[self.player_col][self.player_height] = JumpEnvironmentTile::Player;
-
         // add ground
         for col in &mut state {
             col[self.ground_height] = JumpEnvironmentTile::Ground;
@@ -54,7 +51,7 @@ impl JumpEnvironment {
         // add walls
         for &(wall, is_high) in &self.walls {
             let mut range_start = self.ground_height + 1;
-            let mut range_stop = self.ground_height + self.wall_height;
+            let mut range_stop = self.ground_height + self.wall_height + 1;
             if is_high {
                 range_start += self.wall_height;
                 range_stop += self.wall_height;
@@ -63,6 +60,10 @@ impl JumpEnvironment {
                 state[wall][i] = JumpEnvironmentTile::Wall;
             }
         }
+
+        // add player
+        state[self.player_col][self.player_height] = JumpEnvironmentTile::Player;
+
         state
     }
 
@@ -98,8 +99,15 @@ impl JumpEnvironment {
     }
 
     fn calculate_reward(&mut self) -> i8 {
-        if self.walls.iter().any(|&(w, _)| w == self.player_col) {
-            if self.player_height <= self.wall_height + self.ground_height {
+        if let Some(&(_, high_wall)) = self
+            .walls
+            .iter()
+            .filter(|&(w, _)| *w == self.player_col)
+            .last()
+        {
+            if (high_wall && (self.player_height >= self.wall_height + self.ground_height))
+                || (!high_wall && (self.player_height <= self.wall_height + self.ground_height))
+            {
                 self.done = true;
                 -1
             } else {
