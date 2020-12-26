@@ -27,7 +27,7 @@ impl JumpEnvironment {
         let ground_height = size / 3;
         let player_col = size / 3;
         let player_height = ground_height + 1;
-        let walls: Vec<usize> = vec![size - 1];
+        let walls = vec![size - 1];
         let wall_height = 2;
 
         Self {
