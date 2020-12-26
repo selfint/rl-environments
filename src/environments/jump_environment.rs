@@ -1,8 +1,5 @@
 use rand::Rng;
-use std::{
-    cmp::{max, min},
-    fmt::Display,
-};
+use std::{cmp, fmt::Display};
 
 #[derive(Debug, Clone, Copy)]
 pub enum JumpEnvironmentTile {
@@ -129,9 +126,9 @@ impl JumpEnvironment {
 
     fn update_player_height(&mut self) {
         if self.player_vel != 0 {
-            self.player_height = max(
+            self.player_height = cmp::max(
                 self.ground_height + 1,
-                min(
+                cmp::min(
                     self.size - 1,
                     (self.player_height as i8 + self.player_vel).abs() as usize,
                 ),
