@@ -35,7 +35,10 @@ impl JumpEnvironment {
                             JumpEnvironmentTile::Player
                         } else if y == ground_height {
                             JumpEnvironmentTile::Ground
-                        } else if walls.contains(&x) && y <= wall_height {
+                        } else if walls.contains(&x)
+                            && ground_height < y
+                            && y <= ground_height + wall_height
+                        {
                             JumpEnvironmentTile::Wall
                         } else {
                             JumpEnvironmentTile::Empty
