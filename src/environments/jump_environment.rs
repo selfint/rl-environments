@@ -1,3 +1,4 @@
+use rand::Rng;
 use std::{
     cmp::{max, min},
     fmt::Display,
@@ -27,7 +28,7 @@ impl JumpEnvironment {
         Self {
             size,
             ground_height: size / 3,
-            player_col: size / 3,
+            player_col: size / 6,
             player_vel: 0,
             player_height: (size / 3) + 1,
             walls: vec![size - 1],
@@ -66,11 +67,27 @@ impl JumpEnvironment {
     }
 
     pub fn update(&mut self) -> i8 {
+        self.spawn_walls();
         self.shift_walls();
         self.update_player_height();
         self.update_player_vel();
 
         self.calculate_reward()
+    }
+
+    fn spawn_walls(&mut self) {
+        let mut rng = rand::thread_rng();
+        let min_offset = 3;
+        let max_offset = self.size / 3;
+        let mut random_offset = 1;
+        if min_offset < max_offset {
+            random_offset = rng.gen_range(min_offset..max_offset);
+        }
+        if let Some(&wall) = self.walls.iter().max() {
+            if wall < self.size - random_offset {
+                self.walls.push(self.size - 1);
+            }
+        }
     }
 
     fn calculate_reward(&mut self) -> i8 {
@@ -87,13 +104,12 @@ impl JumpEnvironment {
     }
 
     fn shift_walls(&mut self) {
-        for i in 0..self.walls.len() {
-            if self.walls[i] > 0 {
-                self.walls[i] -= 1;
-            } else {
-                self.walls[i] = self.size - 1;
-            }
-        }
+        self.walls = self
+            .walls
+            .iter()
+            .filter(|&&w| w > 0)
+            .map(|w| w - 1)
+            .collect();
     }
 
     fn update_player_height(&mut self) {
@@ -321,19 +337,6 @@ mod tests {
             for (&initial_wall, &&new_wall) in initial_walls.iter().zip(new_walls.iter()) {
                 assert_eq!(initial_wall, new_wall + 1);
             }
-        }
-    }
-
-    #[test]
-    fn test_walls_despawn() {
-        let mut env = JumpEnvironment::new(5);
-        for _ in 0..5 {
-            env.update();
-        }
-
-        let min_wall = env.walls.iter().min();
-        if let Some(&x) = min_wall {
-            assert!(x > 0);
         }
     }
 
