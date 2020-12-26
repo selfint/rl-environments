@@ -343,7 +343,7 @@ mod tests {
 
     #[test]
     fn test_player_dies_on_wall_collide() {
-        let mut env = JumpEnvironment::new(5);
+        let mut env = JumpEnvironment::new(8);
         let steps_to_collision = env.walls.iter().min().unwrap() - env.player_col;
         for _ in 0..steps_to_collision - 1 {
             env.update();
