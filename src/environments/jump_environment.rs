@@ -8,9 +8,9 @@ enum JumpEnvironmentTile {
     Wall,
 }
 
-struct JumpEnvironment {
+pub struct JumpEnvironment {
     state: Vec<Vec<JumpEnvironmentTile>>,
-    size: usize,
+    pub size: usize,
     ground_height: usize,
     player_col: usize,
     player_vel: i8,
@@ -21,7 +21,7 @@ struct JumpEnvironment {
 }
 
 impl JumpEnvironment {
-    fn new(size: usize) -> Self {
+    pub fn new(size: usize) -> Self {
         let ground_height = size / 3;
         let player_col = size / 3;
         let player_height = ground_height + 1;
