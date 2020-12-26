@@ -67,7 +67,7 @@ impl JumpEnvironment {
         }
     }
 
-    fn update(&mut self) -> i8 {
+    pub fn update(&mut self) -> i8 {
         self.shift_walls();
         self.update_player_height();
         self.update_player_vel();
