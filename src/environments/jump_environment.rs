@@ -97,7 +97,7 @@ impl JumpEnvironment {
 
     fn shift_walls(&mut self) {
         for i in 0..self.walls.len() {
-            if self.walls[i] != self.player_col {
+            if self.walls[i] > 0 {
                 self.walls[i] -= 1;
             } else {
                 self.walls[i] = self.size - 1;
