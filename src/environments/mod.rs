@@ -1,3 +1,1 @@
-mod jump_environment;
-
-pub use jump_environment::JumpEnvironment;
+pub mod jump_environment;
