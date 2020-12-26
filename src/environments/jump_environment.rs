@@ -343,7 +343,7 @@ mod tests {
 
         let min_wall = env.walls.iter().min();
         if let Some(&x) = min_wall {
-            assert!(x >= env.player_col);
+            assert!(x > 0);
         }
     }
 
