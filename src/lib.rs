@@ -1,6 +1,6 @@
 mod environments;
 
-pub use environments::jump_environment;
+pub use environments::*;
 
 #[cfg(test)]
 mod tests {}
