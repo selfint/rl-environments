@@ -34,6 +34,22 @@ impl JumpEnvironment {
         }
     }
 
+    pub fn simple_state(&self) -> Option<(usize, bool)> {
+        if let Some(&(wall, is_high)) = self
+            .walls
+            .iter()
+            .filter(|&(wall, _)| *wall > self.player_col)
+            .rev()
+            .last()
+        {
+            eprintln!("w={}, p={}", wall, self.player_col);
+            let simple_state = (wall - self.player_col, is_high);
+            return Some(simple_state);
+        }
+
+        None
+    }
+
     pub fn state(&self) -> Vec<Vec<JumpEnvironmentTile>> {
         let mut state = Vec::with_capacity(self.size);
         for _ in 0..self.size {
@@ -411,5 +427,26 @@ mod tests {
         }
 
         assert!(high_wall_found);
+    }
+
+    #[test]
+    fn test_get_closest_wall() {
+        let mut env = JumpEnvironment::new(10);
+        for dist in (1..9).rev() {
+            let (wall_dist, _wall_is_high) = env.simple_state().unwrap();
+            assert_eq!(dist, wall_dist);
+
+            if dist == 2 {
+                env.jump();
+            }
+            env.update();
+        }
+
+        for dist in (1..5).rev() {
+            env.update();
+
+            let (wall_dist, _wall_is_high) = env.simple_state().unwrap();
+            assert_eq!(dist, wall_dist);
+        }
     }
 }
