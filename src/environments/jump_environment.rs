@@ -42,7 +42,6 @@ impl JumpEnvironment {
             .rev()
             .last()
         {
-            eprintln!("w={}, p={}", wall, self.player_col);
             let simple_state = (wall - self.player_col, is_high);
             return Some(simple_state);
         }
