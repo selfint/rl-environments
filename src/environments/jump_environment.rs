@@ -49,6 +49,21 @@ impl JumpEnvironment {
         None
     }
 
+    pub fn raw_state(&self) -> Vec<usize> {
+        self.state()
+            .iter()
+            .map(|col| {
+                col.iter().map(|token| match token {
+                    JumpEnvironmentTile::Empty => 0,
+                    JumpEnvironmentTile::Ground => 1,
+                    JumpEnvironmentTile::Player => 2,
+                    JumpEnvironmentTile::Wall => 3,
+                })
+            })
+            .flatten()
+            .collect()
+    }
+
     pub fn state(&self) -> Vec<Vec<JumpEnvironmentTile>> {
         let mut state = Vec::with_capacity(self.size);
         for _ in 0..self.size {
