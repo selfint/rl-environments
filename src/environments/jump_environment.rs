@@ -49,10 +49,6 @@ impl JumpEnvironment {
         None
     }
 
-    pub fn total_simple_states(&self) -> usize {
-        (self.size - self.player_col) * 2
-    }
-
     pub fn state(&self) -> Vec<Vec<JumpEnvironmentTile>> {
         let mut state = Vec::with_capacity(self.size);
         for _ in 0..self.size {
@@ -451,13 +447,5 @@ mod tests {
             let (wall_dist, _wall_is_high) = env.simple_state().unwrap();
             assert_eq!(dist, wall_dist);
         }
-    }
-
-    #[test]
-    fn test_total_env_simple_states() {
-        let size = 10;
-        let env = JumpEnvironment::new(size);
-
-        assert_eq!((size - env.player_col) * 2, env.total_simple_states());
     }
 }
