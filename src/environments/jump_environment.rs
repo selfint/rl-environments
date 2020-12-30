@@ -127,25 +127,24 @@ impl JumpEnvironment {
         }
 
         self.walls = new_walls;
+        self.spawn_walls(max_wall);
+    }
 
-        match max_wall {
-            Some(wall) => {
-                if wall < self.size - 5 {
-                    let offset = rand::thread_rng().gen_range(1..self.size - 3);
-                    let w1 = (self.size - 1, self.ground_height + offset);
-                    let w2 = (self.size - 1, self.ground_height + offset + 1);
-                    self.walls.push(w1);
-                    self.walls.push(w2);
-                }
+    fn spawn_walls(&mut self, max_wall: Option<usize>) {
+        if let Some(wall) = max_wall {
+            if wall < self.size - 5 {
+                self.add_wall();
             }
-            None => {
-                let offset = rand::thread_rng().gen_range(1..self.size - 3);
-                let w1 = (self.size - 1, self.ground_height + offset);
-                let w2 = (self.size - 1, self.ground_height + offset + 1);
-                self.walls.push(w1);
-                self.walls.push(w2);
-            }
+        } else {
+            self.add_wall()
         }
+    }
+
+    fn add_wall(&mut self) {
+        let offset = rand::thread_rng().gen_range(1..self.size - 3);
+        let w1 = (self.size - 1, self.ground_height + offset);
+        let w2 = (self.size - 1, self.ground_height + offset + 1);
+        self.walls.extend([w1, w2].iter());
     }
 
     fn apply_action(&mut self, action: usize) {
