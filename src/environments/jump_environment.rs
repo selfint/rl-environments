@@ -19,29 +19,34 @@ impl Into<[u8; 4]> for JumpEnvironmentTile {
 pub struct JumpEnvironment {
     size: usize,
     state: Vec<[u8; 4]>,
+    walls: Vec<(usize, usize)>,
 }
 
 impl JumpEnvironment {
     pub fn new(size: usize) -> Self {
         assert!(size > 5, "size must be greater than 5");
 
-        let state = JumpEnvironment::generate_initial_state(size);
+        let w = size - 1;
+        let ground_height = 2;
+        let walls = vec![(w, ground_height + 1), (w, ground_height + 2)];
+        let state = JumpEnvironment::generate_initial_state(size, &walls, ground_height);
 
-        Self { size, state }
+        Self { size, state, walls }
     }
 
-    fn generate_initial_state(size: usize) -> Vec<[u8; 4]> {
+    fn generate_initial_state(
+        size: usize,
+        walls: &[(usize, usize)],
+        ground_height: usize,
+    ) -> Vec<[u8; 4]> {
         let mut state = Vec::with_capacity(size * size);
-        let first_wall = size - 1;
-        let wall_height = 2;
-        let ground_height = 2;
         let i_to_xy = |i| (i / size, i % size);
 
         for i in 0..size * size {
             let (x, y) = i_to_xy(i);
             if x == 1 && y == ground_height + 1 {
                 state.push(JumpEnvironmentTile::Player.into());
-            } else if x == first_wall && y > ground_height && y <= ground_height + wall_height {
+            } else if walls.contains(&(x, y)) {
                 state.push(JumpEnvironmentTile::Wall.into());
             } else if y == ground_height {
                 state.push(JumpEnvironmentTile::Ground.into());
