@@ -99,13 +99,11 @@ impl JumpEnvironment {
         &self.state
     }
 
-    pub fn step(&mut self, action: usize) {
-        let size = self.size;
-        let xy_to_i = |xy: &(usize, usize)| xy.0 * size + xy.1;
-
-        // shift walls
+    fn update_walls(&mut self) {
         let mut new_walls = Vec::with_capacity(self.walls.len());
         let mut max_wall = None;
+        let size = self.size;
+        let xy_to_i = |xy: &(usize, usize)| xy.0 * size + xy.1;
         for xy in &self.walls {
             let &(x, y) = xy;
             let i = xy_to_i(xy);
@@ -148,20 +146,23 @@ impl JumpEnvironment {
                 self.walls.push(w2);
             }
         }
+    }
 
-        // player actions
+    fn apply_action(&mut self, action: usize) {
         match action {
             0 => {}
             1 => {
                 if self.player.1 == self.ground_height + 1 {
-                    self.player_vel = 3;
+                    self.player_vel = 2;
                 }
             }
             _ => panic!("got unknown action: '{}' (actions are: 0, 1)", action),
         }
-        self.player_vel -= 1;
+    }
 
-        // update player
+    fn update_player(&mut self) {
+        let size = self.size;
+        let xy_to_i = |xy: &(usize, usize)| xy.0 * size + xy.1;
         let (px, py) = self.player;
         let player_i = xy_to_i(&self.player);
         let new_py = cmp::max(py as i8 + self.player_vel, (self.ground_height + 1) as i8) as usize;
@@ -177,6 +178,13 @@ impl JumpEnvironment {
         }
 
         self.player = new_player_xy;
+        self.player_vel -= 1;
+    }
+
+    pub fn step(&mut self, action: usize) {
+        self.update_walls();
+        self.apply_action(action);
+        self.update_player();
     }
 }
 
