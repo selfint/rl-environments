@@ -117,8 +117,20 @@ mod tests {
     fn test_inaction_kills_player() {
         let mut env = JumpEnvironment::new(6);
         assert!(!env.done);
-        for _ in 0..7 {
+        for _ in 0..6 {
             env.step(0);
+        }
+
+        assert!(env.done);
+    }
+
+    #[test]
+    fn test_constant_action_kills_player() {
+        let mut env = JumpEnvironment::new(7);
+
+        assert!(!env.done);
+        for _ in 0..7 {
+            env.step(1);
         }
 
         assert!(env.done);
