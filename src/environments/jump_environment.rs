@@ -278,10 +278,30 @@ mod tests {
             for tile in env.state.iter() {
                 if tile[PLAYER_TILE] == 1 {
                     player_exists = true;
+                    break;
                 }
             }
 
             assert!(player_exists);
+        }
+    }
+
+    #[test]
+    fn test_wall_always_exists() {
+        let mut env = JumpEnvironment::new(10);
+        let mut rng = rand::thread_rng();
+        for _ in 0..1000 {
+            let action = rng.gen_range(0..2);
+            env.step(action);
+            let mut wall_exists = false;
+            for tile in env.state.iter() {
+                if tile[WALL_TILE] == 1 {
+                    wall_exists = true;
+                    break;
+                }
+            }
+
+            assert!(wall_exists);
         }
     }
 }
