@@ -40,9 +40,9 @@ impl From<&[u8; 3]> for JumpEnvironmentTile {
 
 pub struct JumpEnvironment {
     size: usize,
-    state: Vec<[u8; 3]>,
+    pub state: Vec<[u8; 3]>,
     walls: Vec<(usize, usize)>,
-    done: bool,
+    pub done: bool,
     player: (usize, usize),
     player_vel: i8,
     ground_height: usize,
@@ -130,7 +130,7 @@ impl JumpEnvironment {
 
         match max_wall {
             Some(wall) => {
-                if wall < self.size - 3 {
+                if wall < self.size - 5 {
                     let offset = rand::thread_rng().gen_range(1..self.size - 3);
                     let w1 = (self.size - 1, self.ground_height + offset);
                     let w2 = (self.size - 1, self.ground_height + offset + 1);
@@ -172,19 +172,34 @@ impl JumpEnvironment {
         self.state[player_i][PLAYER_TILE] = 0;
         self.state[new_player_i][PLAYER_TILE] = 1;
 
-        // check collision
-        if !self.done && self.state[new_player_i][WALL_TILE] == 1 {
-            self.done = true
-        }
-
         self.player = new_player_xy;
         self.player_vel -= 1;
     }
 
-    pub fn step(&mut self, action: usize) {
+    pub fn step(&mut self, action: usize) -> i8 {
         self.update_walls();
         self.apply_action(action);
         self.update_player();
+
+        let walls_on_player_col: Vec<&(usize, usize)> = self
+            .walls
+            .iter()
+            .filter(|&(wx, _)| *wx == self.player.0)
+            .collect();
+        let passed_wall = !walls_on_player_col.is_empty()
+            && walls_on_player_col
+                .iter()
+                .all(|&(_, wy)| *wy != self.player.1);
+        let crashed = !(walls_on_player_col.is_empty() || passed_wall);
+
+        if crashed {
+            self.done = true;
+            -1
+        } else if passed_wall {
+            1
+        } else {
+            0
+        }
     }
 }
 
@@ -311,5 +326,32 @@ mod tests {
 
             assert!(wall_exists);
         }
+    }
+
+    #[test]
+    fn test_passing_wall_yields_reward() {
+        let mut env = JumpEnvironment::new(10);
+        let mut rewards = 0;
+        for i in 0..9 {
+            let mut action = 0;
+            if i == 6 {
+                action = 1;
+            }
+            rewards += env.step(action);
+        }
+
+        assert_eq!(rewards, 1);
+    }
+
+    #[test]
+    fn test_dying_yields_negative_reward() {
+        let mut env = JumpEnvironment::new(10);
+        let mut rewards = 0;
+        for _ in 0..8 {
+            let reward = env.step(0);
+            rewards += reward;
+        }
+
+        assert_eq!(rewards, -1);
     }
 }
