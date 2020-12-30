@@ -9,37 +9,38 @@ enum JumpEnvironmentTile {
     Wall,
 }
 
-const EMPTY_TILE: usize = 0;
-const GROUND_TILE: usize = 1;
-const PLAYER_TILE: usize = 2;
-const WALL_TILE: usize = 3;
+const GROUND_TILE: usize = 0;
+const PLAYER_TILE: usize = 1;
+const WALL_TILE: usize = 2;
 
-impl Into<[u8; 4]> for JumpEnvironmentTile {
-    fn into(self) -> [u8; 4] {
+impl Into<[u8; 3]> for JumpEnvironmentTile {
+    fn into(self) -> [u8; 3] {
         match self {
-            JumpEnvironmentTile::Empty => [1, 0, 0, 0],
-            JumpEnvironmentTile::Ground => [0, 1, 0, 0],
-            JumpEnvironmentTile::Player => [0, 0, 1, 0],
-            JumpEnvironmentTile::Wall => [0, 0, 0, 1],
+            JumpEnvironmentTile::Empty => [0, 0, 0],
+            JumpEnvironmentTile::Ground => [1, 0, 0],
+            JumpEnvironmentTile::Player => [0, 1, 0],
+            JumpEnvironmentTile::Wall => [0, 0, 1],
         }
     }
 }
 
-impl From<&[u8; 4]> for JumpEnvironmentTile {
-    fn from(other: &[u8; 4]) -> Self {
-        match other {
-            [1, 0, 0, 0] => JumpEnvironmentTile::Empty,
-            [0, 1, 0, 0] => JumpEnvironmentTile::Ground,
-            [0, 0, 1, 0] => JumpEnvironmentTile::Player,
-            [0, 0, 0, 1] => JumpEnvironmentTile::Wall,
-            _ => panic!("unknown tile '{:?}'", other),
+impl From<&[u8; 3]> for JumpEnvironmentTile {
+    fn from(other: &[u8; 3]) -> Self {
+        if other[PLAYER_TILE] == 1 {
+            JumpEnvironmentTile::Player
+        } else if other[WALL_TILE] == 1 {
+            JumpEnvironmentTile::Wall
+        } else if other[GROUND_TILE] == 1 {
+            JumpEnvironmentTile::Ground
+        } else {
+            JumpEnvironmentTile::Empty
         }
     }
 }
 
 pub struct JumpEnvironment {
     size: usize,
-    state: Vec<[u8; 4]>,
+    state: Vec<[u8; 3]>,
     walls: Vec<(usize, usize)>,
     done: bool,
     player: (usize, usize),
@@ -74,7 +75,7 @@ impl JumpEnvironment {
         walls: &[(usize, usize)],
         ground_height: usize,
         player: &(usize, usize),
-    ) -> Vec<[u8; 4]> {
+    ) -> Vec<[u8; 3]> {
         let mut state = Vec::with_capacity(size * size);
         let i_to_xy = |i| (i / size, i % size);
 
@@ -94,7 +95,7 @@ impl JumpEnvironment {
         state
     }
 
-    pub fn observe(&self) -> &Vec<[u8; 4]> {
+    pub fn observe(&self) -> &Vec<[u8; 3]> {
         &self.state
     }
 
@@ -109,18 +110,11 @@ impl JumpEnvironment {
             let &(x, y) = xy;
             let i = xy_to_i(xy);
 
+            self.state[i][WALL_TILE] = 0;
             if x > 0 {
                 let new_xy = (x - 1, y);
                 let new_i = xy_to_i(&new_xy);
-
-                if self.state[new_i][EMPTY_TILE] == 1 {
-                    self.state.swap(i, new_i);
-                } else if self.state[new_i][PLAYER_TILE] == 1 {
-                    self.state[i] = JumpEnvironmentTile::Empty.into();
-                    self.done = true;
-                } else {
-                    panic!("attempted to set wall on a ground/wall tile");
-                }
+                self.state[new_i][WALL_TILE] = 1;
                 new_walls.push(new_xy);
 
                 let (new_x, _) = new_xy;
@@ -131,8 +125,6 @@ impl JumpEnvironment {
                 } else {
                     max_wall = Some(new_x);
                 }
-            } else {
-                self.state[i] = JumpEnvironmentTile::Empty.into();
             }
         }
 
@@ -162,11 +154,12 @@ impl JumpEnvironment {
             0 => {}
             1 => {
                 if self.player.1 == self.ground_height + 1 {
-                    self.player_vel = 2;
+                    self.player_vel = 3;
                 }
             }
             _ => panic!("got unknown action: '{}' (actions are: 0, 1)", action),
         }
+        self.player_vel -= 1;
 
         // update player
         let (px, py) = self.player;
@@ -175,13 +168,15 @@ impl JumpEnvironment {
         let new_player_xy = (px, new_py);
         let new_player_i = xy_to_i(&new_player_xy);
 
-        if self.state[new_player_i][EMPTY_TILE] == 1 {
-            self.state.swap(player_i, new_player_i);
-        } else if self.state[new_player_i][WALL_TILE] == 1 {
-            self.state[player_i] = JumpEnvironmentTile::Empty.into();
-            self.state[new_player_i] = JumpEnvironmentTile::Player.into();
-            self.done = true;
+        self.state[player_i][PLAYER_TILE] = 0;
+        self.state[new_player_i][PLAYER_TILE] = 1;
+
+        // check collision
+        if !self.done && self.state[new_player_i][WALL_TILE] == 1 {
+            self.done = true
         }
+
+        self.player = new_player_xy;
     }
 }
 
@@ -270,5 +265,23 @@ mod tests {
             .unwrap();
 
         assert_ne!(player_pos, new_player_pos);
+    }
+
+    #[test]
+    fn test_player_always_exists() {
+        let mut env = JumpEnvironment::new(10);
+        let mut rng = rand::thread_rng();
+        for _ in 0..1000 {
+            let action = rng.gen_range(0..2);
+            env.step(action);
+            let mut player_exists = false;
+            for tile in env.state.iter() {
+                if tile[PLAYER_TILE] == 1 {
+                    player_exists = true;
+                }
+            }
+
+            assert!(player_exists);
+        }
     }
 }
