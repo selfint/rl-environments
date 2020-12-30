@@ -176,11 +176,7 @@ impl JumpEnvironment {
         self.player_vel -= 1;
     }
 
-    pub fn step(&mut self, action: usize) -> i8 {
-        self.update_walls();
-        self.apply_action(action);
-        self.update_player();
-
+    fn calculate_reward(&self) -> i8 {
         let walls_on_player_col: Vec<&(usize, usize)> = self
             .walls
             .iter()
@@ -193,13 +189,32 @@ impl JumpEnvironment {
         let crashed = !(walls_on_player_col.is_empty() || passed_wall);
 
         if crashed {
-            self.done = true;
             -1
         } else if passed_wall {
             1
         } else {
             0
         }
+    }
+
+    fn check_done(&mut self) {
+        if !self.done {
+            let size = self.size;
+            let xy_to_i = |xy: &(usize, usize)| xy.0 * size + xy.1;
+
+            if self.state[xy_to_i(&self.player)][WALL_TILE] == 1 {
+                self.done = true;
+            }
+        }
+    }
+
+    pub fn step(&mut self, action: usize) -> i8 {
+        self.update_walls();
+        self.apply_action(action);
+        self.update_player();
+        self.check_done();
+
+        self.calculate_reward()
     }
 }
 
