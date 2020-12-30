@@ -25,8 +25,14 @@ impl JumpEnvironment {
     pub fn new(size: usize) -> Self {
         assert!(size > 5, "size must be greater than 5");
 
-        let mut state = Vec::with_capacity(size);
-        let wall = size - 1;
+        let state = JumpEnvironment::generate_initial_state(size);
+
+        Self { size, state }
+    }
+
+    fn generate_initial_state(size: usize) -> Vec<[u8; 4]> {
+        let mut state = Vec::with_capacity(size * size);
+        let first_wall = size - 1;
         let wall_height = 2;
         let ground_height = 2;
         let i_to_xy = |i| (i / size, i % size);
@@ -35,7 +41,7 @@ impl JumpEnvironment {
             let (x, y) = i_to_xy(i);
             if x == 1 && y == ground_height + 1 {
                 state.push(JumpEnvironmentTile::Player.into());
-            } else if x == wall && y > ground_height && y <= ground_height + wall_height {
+            } else if x == first_wall && y > ground_height && y <= ground_height + wall_height {
                 state.push(JumpEnvironmentTile::Wall.into());
             } else if y == ground_height {
                 state.push(JumpEnvironmentTile::Ground.into());
@@ -44,7 +50,7 @@ impl JumpEnvironment {
             }
         }
 
-        Self { size, state }
+        state
     }
 
     pub fn observe(&self) -> &Vec<[u8; 4]> {
