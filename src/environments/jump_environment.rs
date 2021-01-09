@@ -44,6 +44,7 @@ pub struct JumpEnvironment {
     pub state: Vec<[u8; 3]>,
     walls: Vec<(usize, usize)>,
     pub done: bool,
+    pub max_reward: i32,
     player: (usize, usize),
     player_vel: i8,
     ground_height: usize,
@@ -68,6 +69,7 @@ impl JumpEnvironment {
             player,
             player_vel: 0,
             ground_height,
+            max_reward: 200,
         }
     }
 
@@ -173,7 +175,9 @@ impl JumpEnvironment {
         self.state[new_player_i][PLAYER_TILE] = 1;
 
         self.player = new_player_xy;
-        self.player_vel -= 1;
+        if self.player.1 != self.ground_height + 1 {
+            self.player_vel -= 1;
+        }
     }
 
     fn calculate_reward(&self) -> i8 {
@@ -229,7 +233,7 @@ impl std::fmt::Display for JumpEnvironment {
                 JumpEnvironmentTile::Player => {
                     if self.done {
                         "x"
-                    } else if self.player_vel == 0 {
+                    } else if self.player_vel == 0 || self.player.1 != self.ground_height + 1 {
                         "O"
                     } else {
                         "o"
