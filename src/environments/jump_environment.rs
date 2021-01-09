@@ -45,6 +45,8 @@ pub struct JumpEnvironment {
     walls: Vec<(usize, usize)>,
     pub done: bool,
     pub max_reward: i32,
+    steps: usize,
+    score: i32,
     player: (usize, usize),
     player_vel: i8,
     ground_height: usize,
@@ -70,6 +72,8 @@ impl JumpEnvironment {
             player_vel: 0,
             ground_height,
             max_reward: 200,
+            steps: 0,
+            score: 0,
         }
     }
 
@@ -180,7 +184,7 @@ impl JumpEnvironment {
         }
     }
 
-    fn calculate_reward(&self) -> i8 {
+    fn calculate_reward(&self) -> i32 {
         let walls_on_player_col: Vec<&(usize, usize)> = self
             .walls
             .iter()
@@ -203,6 +207,10 @@ impl JumpEnvironment {
 
     fn check_done(&mut self) {
         if !self.done {
+            if self.score >= self.max_reward {
+                self.done = true;
+            }
+
             let size = self.size;
             let xy_to_i = |xy: &(usize, usize)| xy.0 * size + xy.1;
 
@@ -212,13 +220,16 @@ impl JumpEnvironment {
         }
     }
 
-    pub fn step(&mut self, action: usize) -> i8 {
+    pub fn step(&mut self, action: usize) -> i32 {
         self.update_walls();
         self.apply_action(action);
         self.update_player();
         self.check_done();
+        self.steps += 1;
 
-        self.calculate_reward()
+        let reward = self.calculate_reward();
+        self.score += reward;
+        reward
     }
 }
 
