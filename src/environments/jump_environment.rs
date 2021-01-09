@@ -38,6 +38,7 @@ impl From<&[u8; 3]> for JumpEnvironmentTile {
     }
 }
 
+#[derive(Clone)]
 pub struct JumpEnvironment {
     size: usize,
     pub state: Vec<[u8; 3]>,
